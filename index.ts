@@ -6,6 +6,7 @@ import {
   removeWorktree,
   type Worktree,
 } from "./src/worktree";
+import { isValidBranchName } from "./src/validation";
 
 async function displayWorktrees(): Promise<void> {
   const worktrees = await listWorktrees();
@@ -60,11 +61,7 @@ async function handleCreateWorktree(): Promise<void> {
   if (branchChoice === "__new__") {
     const newBranchName = await p.text({
       message: "Enter new branch name",
-      validate: (value) => {
-        if (!value) return "Branch name is required";
-        if (value.includes(" ")) return "Branch name cannot contain spaces";
-        return undefined;
-      },
+      validate: isValidBranchName,
     });
 
     if (p.isCancel(newBranchName)) {
