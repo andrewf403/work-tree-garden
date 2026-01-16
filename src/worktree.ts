@@ -1,6 +1,7 @@
 import { $ } from "bun";
 import { getRepoRoot } from "./git";
 import * as path from "path";
+import { isPathSiblingOfRepo } from "./validation";
 
 export interface Worktree {
   path: string;
@@ -81,6 +82,11 @@ export async function createWorktree(
   const worktreePath =
     options.worktreePath ||
     path.join(path.dirname(repoRoot), `${repoName}-${branchName.replace(/\//g, "-")}`);
+
+  // Validate that worktree path is a sibling of the repo (defense-in-depth)
+  if (!isPathSiblingOfRepo(worktreePath, repoRoot)) {
+    throw new Error("Worktree path must be a sibling directory of the repository");
+  }
 
   let result;
   if (createBranch) {
