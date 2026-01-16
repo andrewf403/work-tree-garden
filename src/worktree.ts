@@ -76,10 +76,11 @@ export async function createWorktree(
   const { branchName, createBranch = false, baseBranch } = options;
 
   const repoRoot = await getRepoRoot();
-  // Default worktree path: sibling directory named after the branch
+  const repoName = path.basename(repoRoot);
+  // Default worktree path: sibling directory named <repo>-<branch>
   const worktreePath =
     options.worktreePath ||
-    path.join(path.dirname(repoRoot), branchName.replace(/\//g, "-"));
+    path.join(path.dirname(repoRoot), `${repoName}-${branchName.replace(/\//g, "-")}`);
 
   let result;
   if (createBranch) {
