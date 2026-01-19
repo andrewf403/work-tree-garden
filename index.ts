@@ -1,3 +1,5 @@
+#!/usr/bin/env bun
+
 import * as p from "@clack/prompts";
 import { isGitRepo, listBranches, getCurrentBranch, hasCommits } from "./src/git";
 import {
@@ -40,6 +42,7 @@ async function handleCreateWorktree(): Promise<void> {
 
   const branchChoice = await p.select({
     message: "Select a branch or create a new one",
+    maxItems: 6,
     options: [
       { value: "__new__", label: "Create new branch" },
       ...localBranches.map((b) => ({
@@ -76,6 +79,7 @@ async function handleCreateWorktree(): Promise<void> {
     const currentBranch = await getCurrentBranch();
     const baseChoice = await p.select({
       message: "Base the new branch on",
+      maxItems: 6,
       options: [
         { value: currentBranch, label: `${currentBranch} (current)` },
         ...localBranches
@@ -129,6 +133,7 @@ async function handleDeleteWorktree(): Promise<void> {
 
   const worktreeChoice = await p.select({
     message: "Select worktree to delete",
+    maxItems: 6,
     options: deletableWorktrees.map((wt) => ({
       value: wt.path,
       label: `${wt.branch || wt.head.slice(0, 7)} - ${wt.path}`,
