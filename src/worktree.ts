@@ -1,7 +1,7 @@
 import { $ } from "bun";
 import { getRepoRoot } from "./git";
 import * as path from "path";
-import { isPathSiblingOfRepo } from "./validation";
+import { isPathSiblingOfRepo, isValidBranchName } from "./validation";
 
 export interface Worktree {
   path: string;
@@ -84,8 +84,13 @@ export async function createWorktree(
     path.join(path.dirname(repoRoot), `${repoName}-${branchName.replace(/\//g, "-")}`);
 
   // Validate that worktree path is a sibling of the repo (defense-in-depth)
-  if (!isPathSiblingOfRepo(worktreePath, repoRoot)) {
+  if (!(await isPathSiblingOfRepo(worktreePath, repoRoot))) {
     throw new Error("Worktree path must be a sibling directory of the repository");
+  }
+
+  // Validate baseBranch if provided to prevent argument injection
+  if (baseBranch && isValidBranchName(baseBranch)) {
+    throw new Error(`Invalid base branch name: ${isValidBranchName(baseBranch)}`);
   }
 
   let result;
@@ -115,6 +120,14 @@ export async function removeWorktree(
   worktreePath: string,
   force = false
 ): Promise<void> {
+  // Validate that worktreePath is actually a worktree to prevent deletion of arbitrary paths
+  const worktrees = await listWorktrees();
+  const isValidWorktree = worktrees.some((wt) => wt.path === worktreePath);
+  
+  if (!isValidWorktree) {
+    throw new Error("Invalid worktree path: not a registered worktree");
+  }
+
   const args = force ? ["worktree", "remove", "--force", worktreePath] : ["worktree", "remove", worktreePath];
   const result = await $`git ${args}`.quiet();
 

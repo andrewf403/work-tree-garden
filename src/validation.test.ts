@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { isValidBranchName, isPathSiblingOfRepo } from "./validation";
+import { isValidBranchName, isPathSiblingOfRepo, hasSymlinkInPath } from "./validation";
 
 describe("isValidBranchName", () => {
   test("allows valid branch names", () => {
@@ -42,25 +42,35 @@ describe("isValidBranchName", () => {
 });
 
 describe("isPathSiblingOfRepo", () => {
-  test("allows sibling paths", () => {
-    expect(isPathSiblingOfRepo("/home/user/repo-branch", "/home/user/repo")).toBe(true);
-    expect(isPathSiblingOfRepo("/projects/myrepo-feature", "/projects/myrepo")).toBe(true);
+  test("allows sibling paths", async () => {
+    expect(await isPathSiblingOfRepo("/home/user/repo-branch", "/home/user/repo")).toBe(true);
+    expect(await isPathSiblingOfRepo("/projects/myrepo-feature", "/projects/myrepo")).toBe(true);
   });
 
-  test("rejects paths inside the repo", () => {
-    expect(isPathSiblingOfRepo("/home/user/repo/subdir", "/home/user/repo")).toBe(false);
+  test("rejects paths inside the repo", async () => {
+    expect(await isPathSiblingOfRepo("/home/user/repo/subdir", "/home/user/repo")).toBe(false);
   });
 
-  test("rejects the repo itself", () => {
-    expect(isPathSiblingOfRepo("/home/user/repo", "/home/user/repo")).toBe(false);
+  test("rejects the repo itself", async () => {
+    expect(await isPathSiblingOfRepo("/home/user/repo", "/home/user/repo")).toBe(false);
   });
 
-  test("rejects paths in different parent directories", () => {
-    expect(isPathSiblingOfRepo("/tmp/worktree", "/home/user/repo")).toBe(false);
-    expect(isPathSiblingOfRepo("/home/other/repo-branch", "/home/user/repo")).toBe(false);
+  test("rejects paths in different parent directories", async () => {
+    expect(await isPathSiblingOfRepo("/tmp/worktree", "/home/user/repo")).toBe(false);
+    expect(await isPathSiblingOfRepo("/home/other/repo-branch", "/home/user/repo")).toBe(false);
   });
 
-  test("rejects deeply nested paths", () => {
-    expect(isPathSiblingOfRepo("/home/user/subdir/worktree", "/home/user/repo")).toBe(false);
+  test("rejects deeply nested paths", async () => {
+    expect(await isPathSiblingOfRepo("/home/user/subdir/worktree", "/home/user/repo")).toBe(false);
+  });
+});
+
+describe("hasSymlinkInPath", () => {
+  test("returns false for non-existent paths", async () => {
+    expect(await hasSymlinkInPath("/nonexistent/path/that/does/not/exist")).toBe(false);
+  });
+
+  test("returns false for normal directories", async () => {
+    expect(await hasSymlinkInPath("/tmp")).toBe(false);
   });
 });

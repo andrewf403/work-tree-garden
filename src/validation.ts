@@ -1,4 +1,5 @@
 import * as path from "path";
+import { stat } from "fs/promises";
 
 // Git branch name rules:
 // - Cannot start with '-' or '/'
@@ -21,10 +22,43 @@ export function isValidBranchName(name: string): string | undefined {
 }
 
 /**
+ * Check if any path component is a symbolic link
+ * This prevents symlink attacks where an attacker creates a symlink that passes
+ * validation but points to a different location at execution time.
+ */
+export async function hasSymlinkInPath(targetPath: string): Promise<boolean> {
+  try {
+    const stats = await stat(targetPath);
+    return stats.isSymbolicLink();
+  } catch {
+    // Path doesn't exist, check parent directories
+    let current = targetPath;
+    while (current !== path.dirname(current)) {
+      current = path.dirname(current);
+      try {
+        const stats = await stat(current);
+        if (stats.isSymbolicLink()) {
+          return true;
+        }
+      } catch {
+        // Continue checking parent
+      }
+    }
+    return false;
+  }
+}
+
+/**
  * Check if a target path is a valid sibling of the repo root
  * (i.e., it's under the same parent directory but not inside the repo)
+ * Also checks for symlinks to prevent path traversal attacks.
  */
-export function isPathSiblingOfRepo(targetPath: string, repoRoot: string): boolean {
+export async function isPathSiblingOfRepo(targetPath: string, repoRoot: string): Promise<boolean> {
+  // Check if path contains any symlinks (prevents symlink attacks)
+  if (await hasSymlinkInPath(targetPath)) {
+    return false;
+  }
+
   const parent = path.dirname(repoRoot);
   const resolved = path.resolve(targetPath);
   const resolvedParent = path.dirname(resolved);
