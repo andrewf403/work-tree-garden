@@ -30,7 +30,7 @@ export interface Branch {
  */
 export async function listBranches(): Promise<Branch[]> {
   const format = "%(refname:short)|%(HEAD)";
-  const result = await $`git branch -a --format=${format}`.quiet();
+  const result = await $`git branch -a --sort=-committerdate --format=${format}`.quiet();
   if (result.exitCode !== 0) {
     throw new Error("Failed to list branches");
   }
