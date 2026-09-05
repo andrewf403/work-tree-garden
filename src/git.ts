@@ -4,9 +4,9 @@ import { $ } from "bun";
  * Find the root directory of the git repository
  */
 export async function getRepoRoot(): Promise<string> {
-  const result = await $`git rev-parse --show-toplevel`.quiet();
+  const result = await $`git rev-parse --show-toplevel`.quiet().nothrow();
   if (result.exitCode !== 0) {
-    throw new Error("Not inside a git repository");
+    throw new Error(`Failed to find the Git repository root: ${result.stderr.toString().trim() || `Git exited with code ${result.exitCode}`}`);
   }
   return result.text().trim();
 }
@@ -15,7 +15,7 @@ export async function getRepoRoot(): Promise<string> {
  * Check if the current directory is inside a git repository
  */
 export async function isGitRepo(): Promise<boolean> {
-  const result = await $`git rev-parse --is-inside-work-tree`.quiet();
+  const result = await $`git rev-parse --is-inside-work-tree`.quiet().nothrow();
   return result.exitCode === 0;
 }
 
@@ -30,9 +30,9 @@ export interface Branch {
  */
 export async function listBranches(): Promise<Branch[]> {
   const format = "%(refname:short)|%(HEAD)";
-  const result = await $`git branch -a --sort=-committerdate --format=${format}`.quiet();
+  const result = await $`git branch -a --sort=-committerdate --format=${format}`.quiet().nothrow();
   if (result.exitCode !== 0) {
-    throw new Error("Failed to list branches");
+    throw new Error(`Failed to list branches: ${result.stderr.toString().trim() || `Git exited with code ${result.exitCode}`}`);
   }
 
   const lines = result.text().trim().split("\n").filter(Boolean);
@@ -53,9 +53,9 @@ export async function listBranches(): Promise<Branch[]> {
  * Get the current branch name
  */
 export async function getCurrentBranch(): Promise<string> {
-  const result = await $`git branch --show-current`.quiet();
+  const result = await $`git branch --show-current`.quiet().nothrow();
   if (result.exitCode !== 0) {
-    throw new Error("Failed to get current branch");
+    throw new Error(`Failed to get current branch: ${result.stderr.toString().trim() || `Git exited with code ${result.exitCode}`}`);
   }
   return result.text().trim();
 }
@@ -64,7 +64,6 @@ export async function getCurrentBranch(): Promise<string> {
  * Check if the repository has any commits
  */
 export async function hasCommits(): Promise<boolean> {
-  const result = await $`git rev-parse HEAD`.quiet();
+  const result = await $`git rev-parse HEAD`.quiet().nothrow();
   return result.exitCode === 0;
 }
-

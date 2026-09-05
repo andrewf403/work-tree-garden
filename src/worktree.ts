@@ -54,9 +54,9 @@ function parseWorktreeList(output: string): Worktree[] {
  * List all worktrees
  */
 export async function listWorktrees(): Promise<Worktree[]> {
-  const result = await $`git worktree list --porcelain`.quiet();
+  const result = await $`git worktree list --porcelain`.quiet().nothrow();
   if (result.exitCode !== 0) {
-    throw new Error("Failed to list worktrees");
+    throw new Error(`Failed to list worktrees: ${result.stderr.toString().trim() || `Git exited with code ${result.exitCode}`}`);
   }
   return parseWorktreeList(result.text());
 }
@@ -97,17 +97,17 @@ export async function createWorktree(
   if (createBranch) {
     if (baseBranch) {
       result =
-        await $`git worktree add -b ${branchName} ${worktreePath} ${baseBranch}`.quiet();
+        await $`git worktree add -b ${branchName} ${worktreePath} ${baseBranch}`.quiet().nothrow();
     } else {
-      result = await $`git worktree add -b ${branchName} ${worktreePath}`.quiet();
+      result = await $`git worktree add -b ${branchName} ${worktreePath}`.quiet().nothrow();
     }
   } else {
-    result = await $`git worktree add ${worktreePath} ${branchName}`.quiet();
+    result = await $`git worktree add ${worktreePath} ${branchName}`.quiet().nothrow();
   }
 
   if (result.exitCode !== 0) {
     const stderr = result.stderr.toString().trim();
-    throw new Error(stderr || `Failed with exit code ${result.exitCode}`);
+    throw new Error(`Failed to create worktree: ${stderr || `Git exited with code ${result.exitCode}`}`);
   }
 
   return worktreePath;
@@ -129,10 +129,10 @@ export async function removeWorktree(
   }
 
   const args = force ? ["worktree", "remove", "--force", worktreePath] : ["worktree", "remove", worktreePath];
-  const result = await $`git ${args}`.quiet();
+  const result = await $`git ${args}`.quiet().nothrow();
 
   if (result.exitCode !== 0) {
-    throw new Error(`Failed to remove worktree: ${result.stderr.toString()}`);
+    throw new Error(`Failed to remove worktree: ${result.stderr.toString().trim() || `Git exited with code ${result.exitCode}`}`);
   }
 }
 
@@ -140,8 +140,8 @@ export async function removeWorktree(
  * Prune stale worktree information
  */
 export async function pruneWorktrees(): Promise<void> {
-  const result = await $`git worktree prune`.quiet();
+  const result = await $`git worktree prune`.quiet().nothrow();
   if (result.exitCode !== 0) {
-    throw new Error("Failed to prune worktrees");
+    throw new Error(`Failed to prune worktrees: ${result.stderr.toString().trim() || `Git exited with code ${result.exitCode}`}`);
   }
 }

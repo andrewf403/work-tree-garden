@@ -162,6 +162,7 @@ async function handleDeleteWorktree(): Promise<void> {
     spinner.stop("Worktree removed successfully");
   } catch (error) {
     spinner.stop("Failed to remove worktree");
+    p.note(error instanceof Error ? error.message : String(error), "Error");
 
     // Offer force removal if normal removal fails
     const forceRemove = await p.confirm({
@@ -221,7 +222,7 @@ async function main() {
 
   // Check if we're in a git repository
   if (!(await isGitRepo())) {
-    p.outro("Not inside a git repository. Please run this from within a git repo.");
+    console.error("Error: Not inside a Git repository. Please run wtg from within a Git repository.");
     process.exit(1);
   }
 
@@ -235,6 +236,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Error:", error.message);
+  console.error("Error:", error instanceof Error ? error.message : String(error));
   process.exit(1);
 });
